@@ -1,12 +1,15 @@
 'use strict';
 
 const _ = require('lodash');
+const fs = require('fs');
 
 module.exports = {
 
     defaults: {
         client_body_buffer_size: 128,
         client_max_body_size: 10,
+        firewall_allowed_cidr: [],
+        firewall_enabled: false,
         proxy_buffers_number: 32,
         proxy_buffers_size: 4,
         proxy_connect_timeout: 60,
@@ -17,6 +20,25 @@ module.exports = {
     render: function(options) {
         _.defaults(options, this.defaults);
 
+        let has_basic_auth = false;
+        let basic_auth_file = null;
+
+        if(options.loadbalancer.basic_auth && _.keys(options.loadbalancer.basic_auth).length) {
+            has_basic_auth = true;
+            basic_auth_file = `/app/basic_auth/${options.application.id}`;
+
+            if (fs.existsSync(basic_auth_file)) {
+                fs.unlinkSync(basic_auth_file);
+            }
+
+            fs.writeFileSync(basic_auth_file, _.map(options.loadbalancer.basic_auth, (auth, name) => `${name}:${auth.password}`).join('\n'));
+        }
+
+        // build allowed cidr ranges into string
+        options.firewall_allowed_cidr = _.map(options.firewall_allowed_cidr, (cidr) => {
+            return `allow ${cidr};`;
+        }).join('\n');
+
         return _.trim(`
 server {
     listen ${options.loadbalancer.listen_port};
@@ -26,7 +48,12 @@ server {
         ${options.loadbalancer.force_https ? 'return 301 https://$host$request_uri;' : ''}
     }
 
+    ${has_basic_auth ? 'auth_basic  "Basic Auth LB";' : ''}
+    ${has_basic_auth ? `auth_basic_user_file ${basic_auth_file};` : ''}
+
     location / {
+        ${options.firewall_allowed_cidr}
+        ${options.firewall_enabled ? 'deny all;' : ''}
         proxy_set_header        Host                $host;
         proxy_set_header        X-Real-IP           $remote_addr;
         proxy_set_header        X-Forwarded-For     $proxy_add_x_forwarded_for;

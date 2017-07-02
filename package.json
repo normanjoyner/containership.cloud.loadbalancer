@@ -2,13 +2,11 @@
   "name": "containership.cloud.loadbalancer.v2",
   "version": "1.0.0",
   "dependencies": {
+    "@containership/containership.api-bridge": "git://github.com/containership/containership.api-bridge#cf4685cbf5db3192490e94c675723ffc1c6cfe74",
+    "@containership/containership.cloud.constants": "^1.1.9",
+    "@containership/containership.k8s.api-bridge": "git://github.com/containership/containership.k8s.api-bridge#84289fbd20564eec401f02106e4b5073a80484af",
     "async": "^2.1.4",
-    "containership.api-factory": "file:../containership.api-factory",
-    "containership.utils": "file:../containership.utils",
-    "containership.api-bridge": "file:../containership.api-bridge",
     "lodash": "^4.17.4",
-    "mkdirp": "^0.5.1",
-    "node-http-proxy": "^0.2.3",
     "request": "^2.79.0"
   },
   "description": "",
